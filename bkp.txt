@@ -1,0 +1,37 @@
+let
+    Fonte = Csv.Document(File.Contents("C:\Users\Alysson\Documents\Projects\Saude\Emergency Room\Hospital ER.csv"),[Delimiter=",", Columns=11, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"date", type datetime}, {"patient_id", type text}, {"patient_gender", type text}, {"patient_age", Int64.Type}, {"patient_sat_score", Int64.Type}, {"patient_first_inital", type text}, {"patient_last_name", type text}, {"patient_race", type text}, {"patient_admin_flag", type logical}, {"patient_waittime", Int64.Type}, {"department_referral", type text}}),
+    #"patient_age_group" = Table.AddColumn(#"Tipo Alterado", "patient_age_group", each if [patient_age] <= 4 then "00 a 04" 
+        else if [patient_age] >= 5 and [patient_age] <= 9 then "05 a 09" 
+        else if [patient_age] >= 10 and [patient_age] <= 14 then "10 a 14" 
+        else if [patient_age] >= 15 and [patient_age] <= 19 then "15 a 19" 
+        else if [patient_age] >= 20 and [patient_age] <= 24 then "20 a 24" 
+        else if [patient_age] >= 25 and [patient_age] <= 29 then "25 a 29" 
+        else if [patient_age] >= 30 and [patient_age] <= 34 then "30 a 34" 
+        else if [patient_age] >= 35 and [patient_age] <= 39 then "35 a 39" 
+        else if [patient_age] >= 40 and [patient_age] <= 44 then "40 a 44" 
+        else if [patient_age] >= 45 and [patient_age] <= 49 then "45 a 49" 
+        else if [patient_age] >= 50 and [patient_age] <= 54 then "50 a 54" 
+        else if [patient_age] >= 55 and [patient_age] <= 59 then "55 a 59" 
+        else if [patient_age] >= 60 and [patient_age] <= 64 then "60 a 64" 
+        else if [patient_age] >= 65 and [patient_age] <= 69 then "65 a 69" 
+        else if [patient_age] >= 70 and [patient_age] <= 74 then "70 a 74" 
+        else if [patient_age] >= 75 and [patient_age] <= 79 then "75 a 79" 
+        else if [patient_age] >= 80 and [patient_age] <= 84 then "80 a 84" 
+        else if [patient_age] >= 85 and [patient_age] <= 89 then "85 a 89" 
+        else if [patient_age] >= 90 then "90+" 
+        else null),
+    #"Coluna Duplicada" = Table.DuplicateColumn(patient_age_group, "date", "date - Copiar"),
+    #"Tipo Alterado1" = Table.TransformColumnTypes(#"Coluna Duplicada",{{"date - Copiar", type time}}),
+    #"Colunas Renomeadas" = Table.RenameColumns(#"Tipo Alterado1",{{"date - Copiar", "hour"}}),
+    #"Dia da Semana Inserido" = Table.AddColumn(#"Colunas Renomeadas", "Dia da Semana", each Date.DayOfWeek([date]), Int64.Type),
+    #"Nome do Dia Inserido" = Table.AddColumn(#"Dia da Semana Inserido", "Nome do Dia", each Date.DayOfWeekName([date]), type text),
+    #"Colunas Reordenadas" = Table.ReorderColumns(#"Nome do Dia Inserido",{"date", "patient_id", "patient_gender", "patient_age", "patient_sat_score", "patient_first_inital", "patient_last_name", "patient_race", "patient_admin_flag", "patient_waittime", "department_referral", "patient_age_group", "hour", "Nome do Dia", "Dia da Semana"}),
+    #"Personalização Adicionada" = Table.AddColumn(#"Colunas Reordenadas", "custom_hour", each Number.Round(Number.From([hour])*(60*24/60))/(60*24/60)),
+    #"Tipo Alterado2" = Table.TransformColumnTypes(#"Personalização Adicionada",{{"custom_hour", type time}}),
+    #"Coluna Duplicada1" = Table.DuplicateColumn(#"Tipo Alterado2", "date", "date - Copiar"),
+    #"Tipo Alterado3" = Table.TransformColumnTypes(#"Coluna Duplicada1",{{"date - Copiar", type date}}),
+    #"Colunas Renomeadas1" = Table.RenameColumns(#"Tipo Alterado3",{{"date - Copiar", "data"}})
+in
+    #"Colunas Renomeadas1"
